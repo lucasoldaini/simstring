@@ -1,0 +1,2 @@
+graft simstring
+global-include *.h
