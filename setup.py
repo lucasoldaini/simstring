@@ -65,6 +65,8 @@ if sys.platform.startswith("darwin"):
     libs += ["-stdlib=libc++", '-Wl,-undefined,dynamic_lookup']
     extra_compile_args = ["-stdlib=libc++"]
 
+with open('README.md') as reader:
+        readme = reader.read()
 
 simstring_module = Extension(
     '_simstring',
@@ -81,10 +83,15 @@ simstring_module = Extension(
 
 setup(
     name = 'simstring-quickumls',
+    url = 'https://github.com/Georgetown-IR-Lab/simstring',
     version = '1.1.5r1',
+    description=(
+        'Clone of simstring designed to work with QuickUMLS. ' 
+        'Original version here: http://chokkan.org/software/simstring/'
+    ),
+    long_description=readme,
     author = 'Naoaki Okazaki & Blink Health & Luca Soldaini',
     author_email = 'luca@ir.cs.georgetown.edu',
-    description = "SimString Python module adapted to work with quickumls",
     ext_modules = [simstring_module],
     py_modules = ["simstring"]
 )
