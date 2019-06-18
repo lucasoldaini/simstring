@@ -1,2 +1,4 @@
-graft simstring
+graft quickumls_simstring
+graft quickumls_simstring/simstring
 global-include *.h
+include README.md

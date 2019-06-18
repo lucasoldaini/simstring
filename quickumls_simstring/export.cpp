@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <iconv.h>
-#include <simstring/simstring.h>
+#include <quickumls_simstring/simstring/simstring.h>
 
 #include "export.h"
 
