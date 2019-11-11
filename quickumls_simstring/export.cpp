@@ -19,14 +19,14 @@
 #endif/*USE_LIBICONV_GNU*/
 
 #ifndef ICONV_CONST
-#if defined (WIN32)
+#if defined (_WIN32)
 #define ICONV_CONST const
 #else
 #define ICONV_CONST
 #endif
 #endif/*ICONV_CONST*/
 
-#if defined (WIN32)
+#if defined (_WIN32)
 #define __SIZEOF_WCHAR_T__ 2
 #endif
 
@@ -278,7 +278,7 @@ void retrieve_iconv(
     iconv_close(bwd);
 }
 
-#if defined(__APPLE__) || defined(WIN32)
+#if defined(__APPLE__) || defined(_WIN32)
 #include <cassert>
 #endif
 
@@ -292,7 +292,7 @@ std::vector<std::string> reader::retrieve(const char *query)
         retrieve_thru(dbr, query, this->measure, this->threshold, std::back_inserter(ret));
         break;
     case 2:
-#if defined(__APPLE__) || defined(WIN32)
+#if defined(__APPLE__) || defined(_WIN32)
 #if __SIZEOF_WCHAR_T__ == 2
         retrieve_iconv<wchar_t>(dbr, query, UTF16, this->measure, this->threshold, std::back_inserter(ret));
 #else
@@ -303,7 +303,7 @@ assert(0);
 #endif
         break;
     case 4:
-#if defined(__APPLE__) || defined(WIN32)
+#if defined(__APPLE__) || defined(_WIN32)
 #if __SIZEOF_WCHAR_T__ == 4
         retrieve_iconv<wchar_t>(dbr, query, UTF32, this->measure, this->threshold, std::back_inserter(ret));
 #else
@@ -326,7 +326,7 @@ bool reader::check(const char *query)
         std::string qstr = query;
         return dbr.check(qstr, translate_measure(this->measure), this->threshold);
     } else if (dbr.char_size() == 2) {
-#if defined(__APPLE__) || defined(WIN32)
+#if defined(__APPLE__) || defined(_WIN32)
 #if __SIZEOF_WCHAR_T__ == 2
         std::basic_string<wchar_t> qstr;
 #else
@@ -342,7 +342,7 @@ assert(0);
         iconv_close(fwd);
         return dbr.check(qstr, translate_measure(this->measure), this->threshold);
     } else if (dbr.char_size() == 4) {
-#if defined(__APPLE__) || defined(WIN32)
+#if defined(__APPLE__) || defined(_WIN32)
 #if __SIZEOF_WCHAR_T__ == 4
         std::basic_string<wchar_t> qstr;
 #else
