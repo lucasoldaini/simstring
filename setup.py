@@ -48,6 +48,7 @@ additional_include_dirs = []
 library_dirs = None
 extra_compile_args = None
 libs = []
+extension_name = 'quickumls_simstring/_simstring'
 if sys.platform.startswith("darwin") or sys.platform.startswith("cygwin"):
     libs = ['-liconv']
 elif 'conda' in sys.version.lower() and sys.platform.startswith("win"):
@@ -58,6 +59,10 @@ elif 'conda' in sys.version.lower() and sys.platform.startswith("win"):
     anaconda_include_dir = os.path.join(python_executable_dir, 'Library/include')
     anaconda_lib_dir = os.path.join(python_executable_dir, 'Library/lib')
     use_conda_deps = True
+
+    # this extension name needs to be changed for Windows or there will
+    # be an unresolved external error at linking time
+    extension_name = '_simstring'
 
     # let's check if these pieces are actually here before we try to give the include/lib hints below
     if not os.path.isfile(os.path.join(anaconda_include_dir, 'iconv.h')):
@@ -89,11 +94,11 @@ if sys.platform.startswith("darwin"):
     libs += ["-stdlib=libc++", '-Wl,-undefined,dynamic_lookup']
     extra_compile_args = ["-stdlib=libc++"]
 
-with open('README.md') as reader:
+with open('README.md', encoding = 'utf8') as reader:
         readme = reader.read()
 
 simstring_module = Extension(
-    'quickumls_simstring/_simstring',
+    extension_name,
     sources = [
         'quickumls_simstring/export.cpp',
         'quickumls_simstring/export_wrap.cpp',
