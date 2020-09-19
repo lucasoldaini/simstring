@@ -5,6 +5,7 @@ setup.py file for SWIG example
 """
 
 import sys
+import shutil
 import re
 import os.path
 from distutils.core import setup, Extension
@@ -41,6 +42,17 @@ class _CommandInstallCythonized(_install_lib):
         # for each file, match string between
         # second last and last dot and trim it
         matcher = re.compile('\.([^.]+)\.so$')
+        
+        for i, outfile in enumerate(outfiles):
+            # NOTE that since Windows cannot link with an extention name like 'quickumls_simstring/_simstring'
+            # we must work around an install-time issue to make sure that PYD libs still go to installdir/quickumls_simstring
+            if '.pyd' in outfile.lower():
+                # let's copy any .PYD files from the root into the installdir/quickumls_simstring
+                source_path = os.path.join(self.build_dir, pyd_file)
+                target_path = os.path.join(self.install_dir, 'quickumls_simstring', pyd_file)
+                print('Manually copying a Windows PYD from {0} to {1}'.format(source_path, target_path))
+                shutil.copy(source_path, target_path)
+        
         return [batch_rename(file, re.sub(matcher, '.so', file))
                 for file in outfiles]
 
@@ -48,34 +60,39 @@ additional_include_dirs = []
 library_dirs = None
 extra_compile_args = None
 libs = []
+extension_name = 'quickumls_simstring/_simstring'
 if sys.platform.startswith("darwin") or sys.platform.startswith("cygwin"):
     libs = ['-liconv']
-elif 'conda' in sys.version.lower() and sys.platform.startswith("win"):
-    # The conda/Windows-specific setup below assumes that the current conda environment has run something like this :
+elif sys.platform.startswith("win"):
+    # The conda/Windows-specific setup below assumes that the current conda environment has run something like this : 
     # conda install -c conda-forge libiconv
     print('Setting up assuming Anaconda was used to install iconv (conda install -c conda-forge libiconv)')
     python_executable_dir = os.path.dirname(sys.executable)
-    anaconda_include_dir = os.path.join(python_executable_dir, 'Library/include')
-    anaconda_lib_dir = os.path.join(python_executable_dir, 'Library/lib')
-    use_conda_deps = True
-
+    include_dir = os.path.join(python_executable_dir, 'Library/include')
+    lib_dir = os.path.join(python_executable_dir, 'Library/lib')
+    use_existing_libiconv = True
+    
+    # this extension name needs to be changed for Windows or there will
+    # be an unresolved external error at linking time
+    extension_name = '_simstring'
+    
     # let's check if these pieces are actually here before we try to give the include/lib hints below
-    if not os.path.isfile(os.path.join(anaconda_include_dir, 'iconv.h')):
-        print('Could not find header iconv.h at [{0}] so bypassing setup hints.  Verify that iconv was installed with conda.'.format(anaconda_include_dir))
-        use_conda_deps = False
-    elif not os.path.isfile(os.path.join(anaconda_lib_dir, 'iconv.lib')):
-        print('Could not find library iconv.lib at [{0}] so bypassing setup hints. Verify that iconv was installed with conda.'.format(anaconda_lib_dir))
-        use_conda_deps = False
-
-    if use_conda_deps:
+    if not os.path.isfile(os.path.join(include_dir, 'iconv.h')):
+        print('Could not find header iconv.h at [{0}] so bypassing setup hints.  Verify that iconv was installed with conda.'.format(include_dir))
+        use_existing_libiconv = False
+    elif not os.path.isfile(os.path.join(lib_dir, 'iconv.lib')):
+        print('Could not find library iconv.lib at [{0}] so bypassing setup hints. Verify that iconv was installed with conda.'.format(lib_dir))
+        use_existing_libiconv = False
+    
+    if use_existing_libiconv:
         libs = ['iconv.lib']
-        additional_include_dirs = [anaconda_include_dir]
-        library_dirs = [anaconda_lib_dir]
+        additional_include_dirs = [include_dir]
+        library_dirs = [lib_dir]
         # The = at the end of this with nothing after causes the symbol to have no associated value (instead of 'const')
         # so that this will compile under MSVC more info here:
         # https://docs.microsoft.com/en-us/cpp/build/reference/d-preprocessor-definitions?view=vs-2017
         extra_compile_args = ['/DICONV_CONST=']
-        print('Assuming Python executable [{0}], additional include dir [{1}], additional lib dir [{2}]'.format(python_executable_dir, anaconda_include_dir, anaconda_lib_dir))
+        print('Assuming Python executable [{0}], additional include dir [{1}], additional lib dir [{2}]'.format(python_executable_dir, include_dir, lib_dir))
         print('Setting extra_compile_args to {0}'.format(extra_compile_args))
 
         print('NOTE: If there is a failure that rc.exe cannot be found, add the appropriate "WindowsKits" directory to the PATH for either x86 or x64.')
@@ -89,11 +106,11 @@ if sys.platform.startswith("darwin"):
     libs += ["-stdlib=libc++", '-Wl,-undefined,dynamic_lookup']
     extra_compile_args = ["-stdlib=libc++"]
 
-with open('README.md') as reader:
+with open('README.md', encoding = 'utf8') as reader:
         readme = reader.read()
 
 simstring_module = Extension(
-    'quickumls_simstring/_simstring',
+    extension_name,
     sources = [
         'quickumls_simstring/export.cpp',
         'quickumls_simstring/export_wrap.cpp',
