@@ -47,6 +47,7 @@ class _CommandInstallCythonized(_install_lib):
             # NOTE that since Windows cannot link with an extention name like 'quickumls_simstring/_simstring'
             # we must work around an install-time issue to make sure that PYD libs still go to installdir/quickumls_simstring
             if '.pyd' in outfile.lower():
+                pyd_file = os.path.basename(outfile)
                 # let's copy any .PYD files from the root into the installdir/quickumls_simstring
                 source_path = os.path.join(self.build_dir, pyd_file)
                 target_path = os.path.join(self.install_dir, 'quickumls_simstring', pyd_file)
