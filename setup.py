@@ -5,6 +5,7 @@ setup.py file for SWIG example
 """
 
 import sys
+import shutil
 import re
 import os.path
 from distutils.core import setup, Extension
@@ -41,6 +42,17 @@ class _CommandInstallCythonized(_install_lib):
         # for each file, match string between
         # second last and last dot and trim it
         matcher = re.compile('\.([^.]+)\.so$')
+        
+        for i, outfile in enumerate(outfiles):
+            # NOTE that since Windows cannot link with an extention name like 'quickumls_simstring/_simstring'
+            # we must work around an install-time issue to make sure that PYD libs still go to installdir/quickumls_simstring
+            if '.pyd' in outfile.lower():
+                # let's copy any .PYD files from the root into the installdir/quickumls_simstring
+                source_path = os.path.join(self.build_dir, pyd_file)
+                target_path = os.path.join(self.install_dir, 'quickumls_simstring', pyd_file)
+                print('Manually copying a Windows PYD from {0} to {1}'.format(source_path, target_path))
+                shutil.copy(source_path, target_path)
+        
         return [batch_rename(file, re.sub(matcher, '.so', file))
                 for file in outfiles]
 
