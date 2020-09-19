@@ -5,6 +5,7 @@ setup.py file for SWIG example
 """
 
 import sys
+import shutil
 import re
 import os.path
 from distutils.core import setup, Extension
@@ -41,6 +42,18 @@ class _CommandInstallCythonized(_install_lib):
         # for each file, match string between
         # second last and last dot and trim it
         matcher = re.compile('\.([^.]+)\.so$')
+        
+        for i, outfile in enumerate(outfiles):
+            # NOTE that since Windows cannot link with an extention name like 'quickumls_simstring/_simstring'
+            # we must work around an install-time issue to make sure that PYD libs still go to installdir/quickumls_simstring
+            if '.pyd' in outfile.lower():
+                pyd_file = os.path.basename(outfile)
+                # let's copy any .PYD files from the root into the installdir/quickumls_simstring
+                source_path = os.path.join(self.build_dir, pyd_file)
+                target_path = os.path.join(self.install_dir, 'quickumls_simstring', pyd_file)
+                print('Manually copying a Windows PYD from {0} to {1}'.format(source_path, target_path))
+                shutil.copy(source_path, target_path)
+        
         return [batch_rename(file, re.sub(matcher, '.so', file))
                 for file in outfiles]
 
@@ -48,6 +61,7 @@ additional_include_dirs = []
 library_dirs = None
 extra_compile_args = None
 libs = []
+extension_name = 'quickumls_simstring/_simstring'
 if sys.platform.startswith("darwin") or sys.platform.startswith("cygwin"):
     libs = ['-liconv']
 elif 'conda' in sys.version.lower() and sys.platform.startswith("win"):
@@ -58,6 +72,10 @@ elif 'conda' in sys.version.lower() and sys.platform.startswith("win"):
     anaconda_include_dir = os.path.join(python_executable_dir, 'Library/include')
     anaconda_lib_dir = os.path.join(python_executable_dir, 'Library/lib')
     use_conda_deps = True
+
+    # this extension name needs to be changed for Windows or there will
+    # be an unresolved external error at linking time
+    extension_name = '_simstring'
 
     # let's check if these pieces are actually here before we try to give the include/lib hints below
     if not os.path.isfile(os.path.join(anaconda_include_dir, 'iconv.h')):
@@ -89,11 +107,11 @@ if sys.platform.startswith("darwin"):
     libs += ["-stdlib=libc++", '-Wl,-undefined,dynamic_lookup']
     extra_compile_args = ["-stdlib=libc++"]
 
-with open('README.md') as reader:
+with open('README.md', encoding = 'utf8') as reader:
         readme = reader.read()
 
 simstring_module = Extension(
-    'quickumls_simstring/_simstring',
+    extension_name,
     sources = [
         'quickumls_simstring/export.cpp',
         'quickumls_simstring/export_wrap.cpp',
